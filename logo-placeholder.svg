@@ -1,0 +1,22 @@
+<!--
+  assets/logo-placeholder.svg
+  ============================================================
+  Logo placeholder berbentuk lingkaran sederhana, dipakai sebagai
+  pengganti logo resmi merek kamera pada watermark.
+  File ini HANYA sebagai referensi visual / aset cadangan —
+  di dalam aplikasi, logo yang sama digambar langsung melalui
+  Canvas API (lihat fungsi drawPlaceholderLogo di script.js) agar
+  dapat diskalakan sempurna tanpa kehilangan kualitas di berbagai
+  ukuran watermark.
+
+  Pengguna dapat mengganti logo dengan cara:
+  1. Membuka tab "Watermark" di aplikasi
+  2. Menekan tombol "Unggah Logo Kustom"
+  3. Memilih file logo sendiri (PNG/JPG/SVG dirender sbg gambar)
+  ============================================================
+-->
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="100" cy="100" r="86" fill="none" stroke="#111111" stroke-width="10"/>
+  <circle cx="100" cy="100" r="48" fill="none" stroke="#111111" stroke-width="8"/>
+  <circle cx="100" cy="100" r="14" fill="#111111"/>
+</svg>
