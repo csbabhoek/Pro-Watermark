@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Pro Watermark Camera</title>
+  <meta name="description" content="Aplikasi watermark kamera premium bergaya flagship - offline, tanpa backend, PWA installable." />
+  <meta name="theme-color" content="#111111" />
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Pro Watermark" />
+
+  <!-- Font lokal (bebas lisensi, disajikan sebagai fallback system-font-stack, tanpa CDN) -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-theme="dark">
+
+  <!-- ============================================================
+       SPLASH / LOADING OVERLAY (ditampilkan sekilas saat load PWA)
+  ============================================================ -->
+  <div id="splashScreen" class="splash-screen">
+    <div class="splash-logo">
+      <svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="30" stroke="#D4AF37" stroke-width="2"/>
+        <circle cx="32" cy="32" r="12" stroke="#D4AF37" stroke-width="2"/>
+        <circle cx="32" cy="32" r="4" fill="#D4AF37"/>
+      </svg>
+    </div>
+    <p class="splash-title">Pro Watermark Camera</p>
+  </div>
+
+  <!-- ============================================================
+       HEADER APLIKASI
+  ============================================================ -->
+  <header class="app-header">
+    <div class="app-header__brand">
+      <svg class="app-logo" width="28" height="28" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="32" cy="32" r="30" stroke="currentColor" stroke-width="3"/>
+        <circle cx="32" cy="32" r="12" stroke="currentColor" stroke-width="3"/>
+        <circle cx="32" cy="32" r="4" fill="currentColor"/>
+      </svg>
+      <span>Pro Watermark <b>Camera</b></span>
+    </div>
+    <div class="app-header__actions">
+      <button id="themeToggleBtn" class="icon-btn" title="Ganti tema terang/gelap" aria-label="Ganti tema">
+        <svg id="themeIconMoon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       MAIN LAYOUT
+  ============================================================ -->
+  <main class="app-main">
+
+    <!-- ---------- CANVAS / PREVIEW AREA ---------- -->
+    <section class="canvas-area" id="canvasArea">
+
+      <!-- Kondisi kosong: belum ada foto -->
+      <div id="emptyState" class="empty-state">
+        <svg width="72" height="72" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="6" y="16" width="52" height="38" rx="6" stroke="currentColor" stroke-width="2.5"/>
+          <circle cx="32" cy="35" r="11" stroke="currentColor" stroke-width="2.5"/>
+          <path d="M22 16l3.5-6h13L42 16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <h2>Belum ada foto</h2>
+        <p>Unggah foto untuk mulai menambahkan watermark kamera premium</p>
+        <label for="fileInput" class="btn btn-primary">
+          Pilih Foto
+        </label>
+      </div>
+
+      <!-- Wrapper canvas, ditampilkan setelah foto diunggah -->
+      <div id="canvasWrapper" class="canvas-wrapper hidden">
+        <div id="canvasViewport" class="canvas-viewport">
+          <canvas id="mainCanvas"></canvas>
+        </div>
+
+        <!-- Toolbar cepat mengambang di atas canvas -->
+        <div class="canvas-toolbar">
+          <button class="icon-btn" id="zoomOutBtn" title="Perkecil"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35M8 11h6"/></svg></button>
+          <span id="zoomLabel" class="zoom-label">100%</span>
+          <button class="icon-btn" id="zoomInBtn" title="Perbesar"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg></button>
+          <span class="toolbar-divider"></span>
+          <button class="icon-btn" id="resetViewBtn" title="Reset tampilan"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+        </div>
+      </div>
+
+      <input type="file" id="fileInput" accept="image/*" hidden />
+    </section>
+
+    <!-- ---------- PANEL EDIT (SIDEBAR) ---------- -->
+    <aside class="control-panel" id="controlPanel">
+
+      <!-- Tab navigasi -->
+      <nav class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="tab-adjust" role="tab">Sesuaikan</button>
+        <button class="tab-btn" data-tab="tab-watermark" role="tab">Watermark</button>
+        <button class="tab-btn" data-tab="tab-export" role="tab">Ekspor</button>
+      </nav>
+
+      <div class="tab-content-scroll">
+
+        <!-- ============ TAB: SESUAIKAN (transform + filter) ============ -->
+        <div class="tab-pane active" id="tab-adjust">
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Transformasi</h3>
+            <div class="btn-grid">
+              <button class="btn-tool" id="rotateLeftBtn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                Putar Kiri
+              </button>
+              <button class="btn-tool" id="rotateRightBtn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+                Putar Kanan
+              </button>
+              <button class="btn-tool" id="flipHBtn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M17 8l4 4-4 4M7 8l-4 4 4 4"/></svg>
+                Flip Horizontal
+              </button>
+              <button class="btn-tool" id="flipVBtn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M8 7l4-4 4 4M8 17l4 4 4-4"/></svg>
+                Flip Vertikal
+              </button>
+              <button class="btn-tool" id="cropBtn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14M18 22V8a2 2 0 0 0-2-2H2"/></svg>
+                Crop
+              </button>
+              <button class="btn-tool" id="resetAdjustBtn">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+                Reset
+              </button>
+            </div>
+            <!-- Kontrol crop, tampil saat mode crop aktif -->
+            <div id="cropControls" class="crop-controls hidden">
+              <button class="btn btn-primary btn-small" id="applyCropBtn">Terapkan Crop</button>
+              <button class="btn btn-ghost btn-small" id="cancelCropBtn">Batal</button>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Warna &amp; Cahaya</h3>
+
+            <div class="slider-row">
+              <label for="brightnessSlider">Brightness</label>
+              <input type="range" id="brightnessSlider" min="-100" max="100" value="0" />
+              <span class="slider-value" id="brightnessValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="contrastSlider">Contrast</label>
+              <input type="range" id="contrastSlider" min="-100" max="100" value="0" />
+              <span class="slider-value" id="contrastValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="saturationSlider">Saturation</label>
+              <input type="range" id="saturationSlider" min="-100" max="100" value="0" />
+              <span class="slider-value" id="saturationValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="temperatureSlider">Temperature</label>
+              <input type="range" id="temperatureSlider" min="-100" max="100" value="0" />
+              <span class="slider-value" id="temperatureValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="tintSlider">Tint</label>
+              <input type="range" id="tintSlider" min="-100" max="100" value="0" />
+              <span class="slider-value" id="tintValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="shadowSlider">Shadow</label>
+              <input type="range" id="shadowSlider" min="-100" max="100" value="0" />
+              <span class="slider-value" id="shadowValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="highlightSlider">Highlight</label>
+              <input type="range" id="highlightSlider" min="-100" max="100" value="0" />
+              <span class="slider-value" id="highlightValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="sharpenSlider">Sharpen</label>
+              <input type="range" id="sharpenSlider" min="0" max="100" value="0" />
+              <span class="slider-value" id="sharpenValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="blurSlider">Blur</label>
+              <input type="range" id="blurSlider" min="0" max="20" value="0" />
+              <span class="slider-value" id="blurValue">0</span>
+            </div>
+            <div class="slider-row">
+              <label for="opacitySlider">Opacity Foto</label>
+              <input type="range" id="opacitySlider" min="0" max="100" value="100" />
+              <span class="slider-value" id="opacityValue">100</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ============ TAB: WATERMARK ============ -->
+        <div class="tab-pane" id="tab-watermark">
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Teks Kamera</h3>
+            <div class="field-row">
+              <label for="brandInput">Brand Camera</label>
+              <input type="text" id="brandInput" maxlength="40" value="PRO CAMERA" placeholder="Contoh: Find X9 Ultra" />
+            </div>
+            <div class="field-row">
+              <label for="lensInput">Lens</label>
+              <input type="text" id="lensInput" maxlength="30" value="HASSELBLAD" placeholder="Nama lensa" />
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Metadata</h3>
+            <div class="field-row-grid">
+              <div class="field-row">
+                <label for="focalInput">Focal Length</label>
+                <input type="text" id="focalInput" maxlength="12" value="70mm" />
+              </div>
+              <div class="field-row">
+                <label for="apertureInput">Aperture</label>
+                <input type="text" id="apertureInput" maxlength="12" value="f/2.2" />
+              </div>
+              <div class="field-row">
+                <label for="shutterInput">Shutter Speed</label>
+                <input type="text" id="shutterInput" maxlength="12" value="1/50s" />
+              </div>
+              <div class="field-row">
+                <label for="isoInput">ISO</label>
+                <input type="text" id="isoInput" maxlength="12" value="ISO250" />
+              </div>
+            </div>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="showDateCheck" />
+              <span>Tampilkan Tanggal</span>
+            </label>
+            <div class="field-row" id="dateFieldRow" style="display:none;">
+              <input type="date" id="dateInput" />
+            </div>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="showTimeCheck" />
+              <span>Tampilkan Jam</span>
+            </label>
+            <div class="field-row" id="timeFieldRow" style="display:none;">
+              <input type="time" id="timeInput" />
+            </div>
+
+            <label class="checkbox-row">
+              <input type="checkbox" id="showGpsCheck" />
+              <span>Tampilkan GPS</span>
+            </label>
+            <div class="field-row-grid" id="gpsFieldRow" style="display:none;">
+              <div class="field-row">
+                <label for="latInput">Latitude</label>
+                <input type="text" id="latInput" placeholder="-6.2088" />
+              </div>
+              <div class="field-row">
+                <label for="lngInput">Longitude</label>
+                <input type="text" id="lngInput" placeholder="106.8456" />
+              </div>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Logo</h3>
+            <div class="field-row">
+              <label for="logoUpload" class="btn btn-ghost btn-small btn-block">Unggah Logo Kustom (opsional)</label>
+              <input type="file" id="logoUpload" accept="image/*" hidden />
+              <button class="btn btn-ghost btn-small btn-block" id="resetLogoBtn">Gunakan Logo Placeholder</button>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Visibilitas</h3>
+            <label class="checkbox-row">
+              <input type="checkbox" id="hideLogoCheck" />
+              <span>Sembunyikan Logo</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="hideCameraNameCheck" />
+              <span>Sembunyikan Nama Kamera</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="hideMetadataCheck" />
+              <span>Sembunyikan Metadata</span>
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" id="hideWatermarkCheck" />
+              <span>Sembunyikan Watermark Sepenuhnya</span>
+            </label>
+          </div>
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Posisi Watermark</h3>
+            <div class="position-grid">
+              <button class="pos-btn" data-pos="top">Top</button>
+              <button class="pos-btn" data-pos="center">Center</button>
+              <button class="pos-btn active" data-pos="bottom">Bottom</button>
+            </div>
+            <div class="position-grid">
+              <button class="pos-btn" data-pos="left">Left</button>
+              <button class="pos-btn active" data-pos="default-align" data-align="stretch">Full Width</button>
+              <button class="pos-btn" data-pos="right">Right</button>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Ukuran Watermark</h3>
+            <div class="slider-row">
+              <label for="sizeSlider">Skala</label>
+              <input type="range" id="sizeSlider" min="30" max="100" step="10" value="100" />
+              <span class="slider-value" id="sizeValue">100%</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- ============ TAB: EKSPOR ============ -->
+        <div class="tab-pane" id="tab-export">
+          <div class="panel-group">
+            <h3 class="panel-group__title">Format Ekspor</h3>
+            <div class="format-grid">
+              <button class="format-btn active" data-format="png">PNG</button>
+              <button class="format-btn" data-format="jpg">JPG</button>
+              <button class="format-btn" data-format="webp">WEBP</button>
+            </div>
+          </div>
+
+          <div class="panel-group">
+            <h3 class="panel-group__title">Info</h3>
+            <p class="info-text">Kualitas ekspor 100% &mdash; resolusi asli gambar dipertahankan tanpa kompresi tambahan.</p>
+            <p class="info-text" id="dimensionInfo">Dimensi: -</p>
+          </div>
+
+          <button class="btn btn-primary btn-block btn-large" id="exportBtn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Unduh Hasil
+          </button>
+
+          <button class="btn btn-ghost btn-block" id="newPhotoBtn">Ganti Foto Lain</button>
+        </div>
+
+      </div>
+    </aside>
+  </main>
+
+  <!-- Toast notifikasi -->
+  <div id="toast" class="toast"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
