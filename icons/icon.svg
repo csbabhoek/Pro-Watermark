@@ -1,0 +1,19 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#111111"/>
+
+  <!-- Badan kamera -->
+  <rect x="76" y="176" width="360" height="256" rx="36" stroke="#D4AF37" stroke-width="14"/>
+
+  <!-- Viewfinder bump di atas -->
+  <path d="M196 176L214 130C218 119 228 112 240 112H272C284 112 294 119 298 130L316 176"
+        stroke="#D4AF37" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Lensa: lingkaran konsentris ala logo Hasselblad -->
+  <circle cx="256" cy="308" r="86" stroke="#D4AF37" stroke-width="14"/>
+  <circle cx="256" cy="308" r="48" stroke="#D4AF37" stroke-width="12"/>
+  <circle cx="256" cy="308" r="14" fill="#D4AF37"/>
+
+  <!-- Flash / indikator kecil -->
+  <circle cx="384" cy="214" r="10" fill="#D4AF37"/>
+</svg>
